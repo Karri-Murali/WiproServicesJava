@@ -86,7 +86,7 @@ public class PersonFileUtils {
 				default:
 					throw new InvalidFormatStringException("Unknown address type: " + addressType);
 				}
-
+    
 				String key = firstName + "|" + lastName;
 				if (!personMap.containsKey(key)) {
 					personMap.put(key, new Person(firstName, lastName, new ArrayList<>()));
