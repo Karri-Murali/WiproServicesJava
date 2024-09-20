@@ -10,13 +10,17 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.concurrent.CompletableFuture;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.net.MalformedURLException;
+import java.net.SocketException;
 
 public class HttpService {
 
-	// private static final String API_URL =
-	// "http://jsonplaceholder.typicode.com/posts";
-	// private static final String GOOGLE_URL = "http://www.google.com";
+	private static final Logger LOGGER = Logger.getLogger(HttpService.class.getName());
+
+	private static final int CONNECT_TIMEOUT = 5000;
+	private static final int READ_TIMEOUT = 5000;
 
 	public static void fetchDataUsingHttpURLConnection(String API_URL) throws IOException {
 		HttpURLConnection connection = null;
@@ -26,6 +30,8 @@ public class HttpService {
 			URL url = new URL(API_URL);
 			connection = (HttpURLConnection) url.openConnection();
 			connection.setRequestMethod("GET");
+			connection.setConnectTimeout(CONNECT_TIMEOUT);
+			connection.setReadTimeout(READ_TIMEOUT);
 
 			int responseCode = connection.getResponseCode();
 			if (responseCode == HttpURLConnection.HTTP_OK) {
@@ -37,15 +43,17 @@ public class HttpService {
 					response.append(inputLine);
 				}
 
-				System.out.println("Data: " + response.toString());
+				LOGGER.log(Level.INFO, "Data: {0}", response.toString());
 			} else {
-				System.out.println("GET request failed with response code: " + responseCode);
+				LOGGER.log(Level.WARNING, "GET request failed with response code: {0}", responseCode);
 			}
+		} catch (SocketException e) {
+			throw new IOException("Connection reset error", e);
 		} catch (MalformedURLException e) {
-			System.err.println("Invalid URL format: " + e.toString());
+			LOGGER.log(Level.SEVERE, "Invalid URL format: {0}", e.toString());
 			throw e;
 		} catch (IOException e) {
-			System.err.println("I/O error: " + e.getMessage());
+			LOGGER.log(Level.SEVERE, "I/O error: {0}", e.getMessage());
 			throw e;
 		} finally {
 			try {
@@ -56,49 +64,64 @@ public class HttpService {
 					connection.disconnect();
 				}
 			} catch (IOException e) {
-				System.err.println("Error closing resources: " + e.getMessage());
+				LOGGER.log(Level.SEVERE, "Error closing resources: {0}", e.getMessage());
 			}
 		}
 	}
 
-	public static void fetchDataUsingHttpClient(String API_url) throws MalformedURLException {
+	public static void fetchDataUsingHttpClient(String API_URL) throws MalformedURLException {
 		try {
-			HttpClient client = HttpClient.newHttpClient();
-			HttpRequest request = HttpRequest.newBuilder().uri(URI.create(API_url)).build();
+			HttpClient client = HttpClient.newBuilder().connectTimeout(java.time.Duration.ofMillis(CONNECT_TIMEOUT))
+					.build();
+
+			HttpRequest request = HttpRequest.newBuilder().uri(URI.create(API_URL))
+					.timeout(java.time.Duration.ofMillis(READ_TIMEOUT)).build();
 
 			CompletableFuture<HttpResponse<String>> response = client.sendAsync(request,
 					HttpResponse.BodyHandlers.ofString());
 
-			response.thenApply(HttpResponse::body).thenAccept(body -> System.out.println("Products: " + body))
+			response.thenApply(HttpResponse::body).thenAccept(body -> LOGGER.log(Level.INFO, "Products: {0}", body))
 					.exceptionally(e -> {
-						System.err.println("Error during async HTTP call: " + e.getMessage());
+						LOGGER.log(Level.SEVERE, "Error during async HTTP call: {0}", e.getMessage());
 						return null;
 					}).join();
 
 		} catch (IllegalArgumentException e) {
-			System.err.println("Invalid URI: " + e.getMessage());
+			LOGGER.log(Level.SEVERE, "Invalid URI: {0}", e.getMessage());
 			throw e;
 		} catch (Exception e) {
-			System.err.println("An unexpected error occurred: " + e.getMessage());
+			LOGGER.log(Level.SEVERE, "An unexpected error occurred: {0}", e.getMessage());
 			throw e;
 		}
 	}
 
-	public static void fetcheHomePageWithHeaders(String G_URL) throws Exception {
+	public static void fetchHomePageWithHeaders(String G_URL) throws Exception {
 		try {
-			HttpClient client = HttpClient.newHttpClient();
+			HttpClient client = HttpClient.newBuilder().connectTimeout(java.time.Duration.ofMillis(CONNECT_TIMEOUT))
+					.build();
+
 			HttpRequest request = HttpRequest.newBuilder().uri(URI.create(G_URL)).header("User-Agent",
 					"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
-					.header("Accept-Language", "en-US,en;q=0.5").header("Accept", "text/html").build();
+					.header("Accept-Language", "en-US,en;q=0.5").header("Accept", "text/html")
+					.timeout(java.time.Duration.ofMillis(READ_TIMEOUT)).build();
 
 			HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
-			System.out.println("Google Page HTML:");
-			System.out.println(response.body());
+			if (response.statusCode() == 200) {
+				LOGGER.log(Level.INFO, "Google Page HTML:");
+				LOGGER.log(Level.INFO, response.body());
+			} else {
+				LOGGER.log(Level.WARNING, "Failed to fetch page. Status Code: {0}", response.statusCode());
+			}
 
 		} catch (IOException | InterruptedException e) {
-			System.err.println("Error fetching Google page: " + e.getMessage());
+			LOGGER.log(Level.SEVERE, "Error fetching Google page: {0}", e.getMessage());
 			throw e;
 		}
+	}
+
+	public static String parseResponse(String response) {
+
+		return response.trim();
 	}
 }

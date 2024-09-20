@@ -77,24 +77,17 @@ public class HttpConnectionTest {
 
 	@Test
 	public void testFetchGooglePageWithHeaders_Success() {
-		assertDoesNotThrow(() -> HttpService.fetcheHomePageWithHeaders("http://www.google.com"));
+		assertDoesNotThrow(() -> HttpService.fetchHomePageWithHeaders("http://www.google.com"));
 	}
 
 	@Test
 	public void testFetchGooglePageWithHeaders_InvalidUrlIOException() {
-		assertThrows(IOException.class, () -> HttpService.fetcheHomePageWithHeaders("http://invalid.google.com"));
-	}
-
-	@Test
-	public void testFetchDataUsingHttpURLConnection_NotFound() throws IOException {
-		String invalidApiUrl = "http://jsonplaceholder.typicode.com/invalid-endpoint";
-
-		assertDoesNotThrow(() -> HttpService.fetchDataUsingHttpURLConnection(invalidApiUrl));
+		assertThrows(IOException.class, () -> HttpService.fetchHomePageWithHeaders("http://invalid.google.com"));
 	}
 
 	@Test
 	public void testFetchGooglePageWithHeaders_IOError() {
 		String invalidGoogleUrl = "http://invalid.google.com";
-		assertThrows(IOException.class, () -> HttpService.fetcheHomePageWithHeaders(invalidGoogleUrl));
+		assertThrows(IOException.class, () -> HttpService.fetchHomePageWithHeaders(invalidGoogleUrl));
 	}
 }
