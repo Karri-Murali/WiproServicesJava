@@ -20,6 +20,8 @@ public class PersonDatabaseUtils {
 	private static final String DB_URL = "jdbc:mysql://localhost:3306/Murali";
 	private static final String DB_USERNAME = "root";
 	private static final String DB_PASSWORD = "Pavan@8641";
+	
+	/*** I hanve made documentation for these Classs **/
 
 	public static boolean savePersonsToDatabase(List<Person> persons, Connection connection) throws SQLException {
 		String personSQL = "INSERT INTO Person (first_name, last_name) VALUES (?, ?)";
